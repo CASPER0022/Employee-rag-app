@@ -53,3 +53,10 @@ jspm_packages/
 
 # Aider AI Chat
 .aider*
+
+# RAG local/private artifacts
+rag_app/rag_system/db/
+rag_app/rag_system/embeddings/
+rag_app/rag_data/*
+!rag_app/rag_data/.gitkeep
+!rag_app/rag_data/README.md
