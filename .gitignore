@@ -60,3 +60,4 @@ rag_app/rag_system/embeddings/
 rag_app/rag_data/*
 !rag_app/rag_data/.gitkeep
 !rag_app/rag_data/README.md
+!rag_app/rag_data/*.xlsx
