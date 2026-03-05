@@ -22,13 +22,12 @@ Example from JavaScript:
 import frappe
 from pathlib import Path
 import sys
+import importlib
 
 # Add rag_system to path
 rag_system_path = Path(__file__).resolve().parent
 if str(rag_system_path) not in sys.path:
     sys.path.insert(0, str(rag_system_path))
-
-from query_llm import ask
 
 @frappe.whitelist(allow_guest=True)
 def query_employee(question: str):
@@ -48,7 +47,13 @@ def query_employee(question: str):
         }
     """
     try:
-        result = ask(question)
+        try:
+            from .query_llm_doctype import ask
+        except ImportError:
+            ask = importlib.import_module("query_llm_doctype").ask
+
+        # Force refresh so latest DocType rows/fields are reflected in SQL + RAG paths.
+        result = ask(question, force_init=True)
         return result
     except Exception as e:
         frappe.log_error(f"RAG Query Error: {str(e)}", "RAG System")
@@ -60,17 +65,16 @@ def query_employee(question: str):
 @frappe.whitelist(allow_guest=True)
 def get_query_stats()-> dict:
     """Get statistics about the employee database"""
-    from query_llm import sql_conn
-    import pandas as pd
+    try:
+        from .doctype_data_loader import get_employee_count
+    except ImportError:
+        get_employee_count = importlib.import_module("doctype_data_loader").get_employee_count
     
-    try: 
-        # Get basic stats
-        count_query = "SELECT COUNT(*) as total FROM employees"
-        total_employees = pd.read_sql_query(count_query, sql_conn)
-        
+    try:
         return {
-            "total_employees": total_employees['total'].iloc[0],
-            "status": "connected"
+            "total_employees": get_employee_count(),
+            "status": "connected",
+            "data_source": "Frappe DocType (Employee Data)",
         }
     except Exception as e:
         frappe.log_error(f"RAG Stats Error: {str(e)}", "RAG System")
